@@ -89,6 +89,9 @@ test('take', () => {
   expect(query.run()).toHaveLength(1);
   expect(query.run()).toHaveLength(1);
   expect(query.run()).toHaveLength(1);
+  expect(query.run()).toHaveLength(1);
+  expect(query.run()).toHaveLength(1);
+  expect(query.run()).toHaveLength(0);
 });
 
 test('as/merge', () => {

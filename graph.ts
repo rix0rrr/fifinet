@@ -1,6 +1,6 @@
 import { VertexSource } from './pipes';
 import { Query } from './query';
-import { objectFilter } from './util';
+import { filterEdges, objectFilter } from './util';
 
 export type InVertex<V> = V & { _id?: string; }
 export type InEdge<E> = E & { _label?: string; _in: string; _out: string; }
@@ -111,11 +111,13 @@ export class Graph<V, E> {
     return query;
   }
 
-  public findInEdges(vertex: Vertex<V, E>) {
-    return vertex._in;
+  public findInEdges(vertex: Vertex<V, E>, edgeFilter?: string | string[] | Partial<EdgeProps<E>>) {
+    // FIXME: this copying ain't great either
+    return vertex._in.filter(filterEdges(edgeFilter));
   }
 
-  public findOutEdges(vertex: Vertex<V, E>) {
-    return vertex._out;
+  public findOutEdges(vertex: Vertex<V, E>, edgeFilter?: string | string[] | Partial<EdgeProps<E>>) {
+    // FIXME: this copying ain't great either
+    return vertex._out.filter(filterEdges(edgeFilter));
   }
 }

@@ -1,6 +1,6 @@
 import { Edge, Graph, EdgeProps, VertexProps, Vertex } from './graph';
 import { moveGremlin, makeGremlin, MaybeGremlin } from './gremlin';
-import { filterEdges, objectFilter } from './util';
+import { objectFilter } from './util';
 
 export type Piperesult<V, E> = 'done' | 'pull' | MaybeGremlin<V, E>;
 
@@ -72,9 +72,7 @@ export class TraverseEdgePipe<V, E> implements IPipe<V, E> {
     if (this.cycleBreaker.has(vertex._id)) { return []; }
     this.cycleBreaker.add(vertex._id);
 
-    // FIXME: this copying ain't great either
-    return graph[this.findMethod](vertex)
-      .filter(filterEdges(this.edgeFilter));
+    return graph[this.findMethod](vertex, this.edgeFilter);
   }
 
   protected followEdge(edge: Edge<V, E>): Vertex<V, E> {
