@@ -5,16 +5,16 @@ import { objectFilter } from './util';
 export type InVertex<V> = V & { _id?: string; }
 export type InEdge<E> = E & { _label?: string; _in: string; _out: string; }
 
-export type Vertex<V> = V & { _id: string; }
-export type Edge<E> = E & { _label?: string; }
+export type VertexProps<V> = V & { _id: string; }
+export type EdgeProps<E> = E & { _label?: string; }
 
-export type FullVertex<V, E> = V & { _id: string, _in: Array<FullEdge<V, E>>, _out: Array<FullEdge<V, E>> };
-export type FullEdge<V, E> = E & { _label?: string; _in: FullVertex<V, E>, _out: FullVertex<V, E> };
+export type Vertex<V, E> = V & { _id: string, _in: Array<Edge<V, E>>, _out: Array<Edge<V, E>> };
+export type Edge<V, E> = E & { _label?: string; _in: Vertex<V, E>, _out: Vertex<V, E> };
 
 export class Graph<V, E> {
-  private readonly vertices: Array<FullVertex<V, E>> = [];
-  private readonly edges: Array<FullEdge<V, E>> = [];
-  private readonly vertexIndex: Record<string, FullVertex<V, E>> = {};
+  private readonly vertices: Array<Vertex<V, E>> = [];
+  private readonly edges: Array<Edge<V, E>> = [];
+  private readonly vertexIndex: Record<string, Vertex<V, E>> = {};
   private autoId = 1;
 
   constructor(vs?: InVertex<V>[], es?: InEdge<E>[]) {
@@ -59,7 +59,7 @@ export class Graph<V, E> {
       throw new Error(`That edge's ${_in ? 'out' : 'in'} vertex wasn't found: ${_in ? e._out : e._in }`);
     }
 
-    const edge: FullEdge<V, E> = {
+    const edge: Edge<V, E> = {
       ...e,
       _in,
       _out,
@@ -70,15 +70,15 @@ export class Graph<V, E> {
     this.edges.push(edge);
   }
 
-  public findVertexById(id: string): FullVertex<V, E> | undefined {
+  public findVertexById(id: string): Vertex<V, E> | undefined {
     return this.vertexIndex[id];
   }
 
-  public findVerticesByIds(ids: string[]): Array<FullVertex<V, E> | undefined> {
+  public findVerticesByIds(ids: string[]): Array<Vertex<V, E> | undefined> {
     return ids.map(this.findVertexById.bind(this));
   }
 
-  public findVertices(pattern?: Partial<Vertex<V>> | string | string[]): Array<FullVertex<V, E> | undefined> {
+  public findVertices(pattern?: Partial<VertexProps<V>> | string | string[]): Array<Vertex<V, E> | undefined> {
     if (!pattern || (Array.isArray(pattern) && pattern.length === 0)) {
       // FIXME: Copying is expensive
       return this.vertices.slice();
@@ -99,23 +99,23 @@ export class Graph<V, E> {
     throw new Error(`Did not understand argument: ${pattern}`);
   }
 
-  public searchVertices(pattern: Partial<Vertex<V>>): Array<FullVertex<V, E> | undefined> {
+  public searchVertices(pattern: Partial<VertexProps<V>>): Array<Vertex<V, E> | undefined> {
     return this.vertices.filter((vertex) => {
       return objectFilter(vertex, pattern);
     })
   }
 
-  public v(arg?: string | string[] | Partial<Vertex<V>>) {
+  public v(arg?: string | string[] | Partial<VertexProps<V>>) {
     const query = new Query<V, E>(this);
     query.add(new VertexSource(arg));
     return query;
   }
 
-  public findInEdges(vertex: FullVertex<V, E>) {
+  public findInEdges(vertex: Vertex<V, E>) {
     return vertex._in;
   }
 
-  public findOutEdges(vertex: FullVertex<V, E>) {
+  public findOutEdges(vertex: Vertex<V, E>) {
     return vertex._out;
   }
 }

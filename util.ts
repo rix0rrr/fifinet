@@ -1,4 +1,4 @@
-import { FullEdge, Edge } from "./graph";
+import { Edge, EdgeProps } from "./graph";
 
 export function objectFilter<F extends object, T extends F>(thing: T, filter: F) {
   for (const key in filter) {
@@ -10,8 +10,8 @@ export function objectFilter<F extends object, T extends F>(thing: T, filter: F)
   return true;
 }
 
-export function filterEdges<V, E>(filter?: string | string[] | Partial<Edge<E>>) {
-  return (edge: FullEdge<V, E>) => {
+export function filterEdges<V, E>(filter?: string | string[] | Partial<EdgeProps<E>>) {
+  return (edge: Edge<V, E>) => {
     if (!filter) {
       return true;
     }

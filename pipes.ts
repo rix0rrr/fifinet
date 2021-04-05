@@ -1,4 +1,4 @@
-import { FullEdge, Graph, Edge, Vertex, FullVertex } from './graph';
+import { Edge, Graph, EdgeProps, VertexProps, Vertex } from './graph';
 import { moveGremlin, makeGremlin, MaybeGremlin } from './gremlin';
 import { filterEdges, objectFilter } from './util';
 
@@ -9,9 +9,9 @@ export interface IPipe<V, E> {
 }
 
 export class VertexSource<V, E> implements IPipe<V, E> {
-  private vertices?: Array<FullVertex<V, E>>;
+  private vertices?: Array<Vertex<V, E>>;
 
-  constructor(private readonly pattern?: string | string[] | Partial<Vertex<V>>) {
+  constructor(private readonly pattern?: string | string[] | Partial<VertexProps<V>>) {
   }
 
   public step(graph: Graph<V, E>, gremlin: MaybeGremlin<V, E>): Piperesult<V, E> {
@@ -30,13 +30,13 @@ export class VertexSource<V, E> implements IPipe<V, E> {
 }
 
 export class TraverseEdgePipe<V, E> implements IPipe<V, E> {
-  protected edges: Array<FullEdge<V, E>> = [];
+  protected edges: Array<Edge<V, E>> = [];
   protected gremlin: MaybeGremlin<V, E>;
   private readonly findMethod: 'findInEdges' | 'findOutEdges';
   private readonly edgeList: '_in' | '_out';
   private readonly cycleBreaker = new Set<string>();
 
-  constructor(dir: 'in' | 'out', private readonly steps: 'one' | 'many', private readonly edgeFilter?: string | string[] | Partial<Edge<E>>) {
+  constructor(dir: 'in' | 'out', private readonly steps: 'one' | 'many', private readonly edgeFilter?: string | string[] | Partial<EdgeProps<E>>) {
     this.findMethod = dir == 'out' ? 'findOutEdges' : 'findInEdges';
     this.edgeList = dir == 'out' ? '_in' : '_out';
   }
@@ -66,7 +66,7 @@ export class TraverseEdgePipe<V, E> implements IPipe<V, E> {
     return moveGremlin(this.gremlin!, vertex);
   }
 
-  protected edgesFrom(graph: Graph<V, E>, vertex: FullVertex<V, E>) {
+  protected edgesFrom(graph: Graph<V, E>, vertex: Vertex<V, E>) {
     // The 2nd time we're asked to return edges from a vertex, return
     // an empty list.
     if (this.cycleBreaker.has(vertex._id)) { return []; }
@@ -77,13 +77,13 @@ export class TraverseEdgePipe<V, E> implements IPipe<V, E> {
       .filter(filterEdges(this.edgeFilter));
   }
 
-  protected followEdge(edge: FullEdge<V, E>): FullVertex<V, E> {
+  protected followEdge(edge: Edge<V, E>): Vertex<V, E> {
     return edge[this.edgeList];
   }
 }
 
 export class PropertyPipe<V, E> implements IPipe<V, E> {
-  constructor(private readonly property: keyof Vertex<V>) {
+  constructor(private readonly property: keyof VertexProps<V>) {
   }
 
   public step(graph: Graph<V, E>, gremlin: MaybeGremlin<V, E>): Piperesult<V, E> {
@@ -105,7 +105,7 @@ export class UniquePipe<V, E> implements IPipe<V, E> {
 }
 
 export class VertexFilterPipe<V, E> implements IPipe<V, E> {
-  constructor(private readonly pattern: Partial<Vertex<V>> | ((x: Vertex<V>, g: MaybeGremlin<V, E>) => boolean)) {
+  constructor(private readonly pattern: Partial<VertexProps<V>> | ((x: VertexProps<V>, g: MaybeGremlin<V, E>) => boolean)) {
   }
 
   public step(graph: Graph<V, E>, gremlin: MaybeGremlin<V, E>): Piperesult<V, E> {
@@ -155,7 +155,7 @@ export class AliasPipe<V, E> implements IPipe<V, E> {
 }
 
 export class MergePipe<V, E> implements IPipe<V, E> {
-  private vertices?: Array<FullVertex<V, E>>;
+  private vertices?: Array<Vertex<V, E>>;
 
   constructor(private readonly aliases: string[]) {
   }
