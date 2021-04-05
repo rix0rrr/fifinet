@@ -2,10 +2,10 @@ import { Vertex } from './graph';
 
 type State = Record<string, any>;
 
-export type MaybeGremlin = Gremlin | undefined;
+export type MaybeGremlin<V, E> = Gremlin<V, E> | undefined;
 
-export interface Gremlin {
-  readonly vertex: Vertex<any, any>;
+export interface Gremlin<V, E> {
+  readonly vertex: Vertex<V, E>;
   readonly state: State;
   result?: any;
 }
@@ -14,6 +14,6 @@ export function makeGremlin<V, E>(vertex: Vertex<V, E>, state?: State) {
   return { vertex, state: state ?? {} };
 }
 
-export function gotoVertex(gremlin: Gremlin, vertex: Vertex<any, any>) {
+export function gotoVertex<V, E>(gremlin: Gremlin<V, E>, vertex: Vertex<V, E>) {
   return makeGremlin(vertex, gremlin.state);
 }

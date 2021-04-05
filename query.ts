@@ -81,8 +81,8 @@ export class Query<V, E> {
 
   public run(): Array<UserVertex<V>> {
     const max = this.program.length - 1;                     // index of the last step in the program
-    let maybeGremlin: MaybeGremlin = undefined;
-    const results: Array<Gremlin> = [];
+    let maybeGremlin: MaybeGremlin<V, E> = undefined;
+    const results: Array<Gremlin<V, E>> = [];
     let done = -1;
     let pc = max;
 
