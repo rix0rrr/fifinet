@@ -1,6 +1,6 @@
-import { Graph, UserVertex } from './graph';
+import { Graph, Edge, Vertex } from './graph';
 import { Gremlin, MaybeGremlin } from './gremlin';
-import { AliasPipe, BackPipe, ExceptPipe, IPipe, MergePipe, PropertyPipe, SimpleTraversal, TakePipe, UniquePipe, VertexFilterPipe } from './pipes';
+import { AliasPipe, BackPipe, ExceptPipe, TraverseEdgePipe, IPipe, MergePipe, PropertyPipe, TakePipe, UniquePipe, VertexFilterPipe } from './pipes';
 
 export interface PropertyQuery<P> {
   run(): P[];
@@ -24,15 +24,35 @@ export class Query<V, E> {
     return this;
   }
 
+  /**
+   * Traverse one edge that matches the filter (if given)
+   */
   public out(edgeFilter?: string | string[] | Partial<E>): this {
-    return this.add(new SimpleTraversal('out', edgeFilter));
+    return this.add(new TraverseEdgePipe('out', 'one', edgeFilter));
   }
 
+  /**
+   * Traverse one or more edges that match the filter (if given)
+   */
+  public outAny(edgeFilter?: string | string[] | Partial<E>): this {
+    return this.add(new TraverseEdgePipe('out', 'many', edgeFilter));
+  }
+
+  /**
+   * Traverse one incoming edge that matches the filter (if given)
+   */
   public in(edgeFilter?: string | string[] | Partial<E>): this {
-    return this.add(new SimpleTraversal('in', edgeFilter));
+    return this.add(new TraverseEdgePipe('in', 'one', edgeFilter));
   }
 
-  public property<P extends keyof V>(propertyName: P): PropertyQuery<V[P]> {
+  /**
+   * Traverse one or more incoming edges that matches the filter (if given)
+   */
+  public inAny(edgeFilter?: string | string[] | Partial<E>): this {
+    return this.add(new TraverseEdgePipe('in', 'many', edgeFilter));
+  }
+
+  public property<P extends keyof Vertex<V>>(propertyName: P): PropertyQuery<Vertex<V>[P]> {
     this.add(new PropertyPipe(propertyName));
     return {
       // Not correct but I don't want to figure out how to properly type this
@@ -46,7 +66,7 @@ export class Query<V, E> {
     return this.add(new UniquePipe());
   }
 
-  public filter(pattern: Partial<V> | ((x: V) => boolean)): this {
+  public filter(pattern: Partial<Vertex<V>> | ((x: Vertex<V>) => boolean)): this {
     return this.add(new VertexFilterPipe(pattern));
   }
 
@@ -79,7 +99,7 @@ export class Query<V, E> {
     return fn(this.as(alias)).back(alias).unique();
   }
 
-  public run(): Array<UserVertex<V>> {
+  public run(): Array<Vertex<V>> {
     const max = this.program.length - 1;                     // index of the last step in the program
     let maybeGremlin: MaybeGremlin<V, E> = undefined;
     const results: Array<Gremlin<V, E>> = [];

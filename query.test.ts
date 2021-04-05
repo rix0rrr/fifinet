@@ -1,4 +1,4 @@
-import { EdgeBase, Graph, VertexBase } from "./graph";
+import { Graph } from "./graph";
 
 interface MyVertex {
   _id: string;
@@ -16,11 +16,15 @@ function odinGraph() {
       { _id: 'thor', hair: 'magnificent' },
       { _id: 'balder', hair: 'middling' },
       { _id: 'hoder', hair: 'y' },
+      { _id: 'mothi', hair: 'dark' },
+      { _id: 'magni', hair: 'light' },
     ],
     [
       { _label: 'childOf', _in: 'odin', _out: 'thor', color: 'green' },
       { _label: 'childOf', _in: 'odin', _out: 'balder', color: 'green', },
       { _label: 'childOf', _in: 'odin', _out: 'hoder', color: 'blue', },
+      { _label: 'childOf', _in: 'thor', _out: 'mothi', color: 'pink', },
+      { _label: 'childOf', _in: 'thor', _out: 'magni', color: 'grey', },
     ]
   );
 }
@@ -28,7 +32,7 @@ function odinGraph() {
 test('vertex', () => {
   const g = odinGraph();
 
-  expect(g.v().run()).toHaveLength(4);
+  expect(g.v().run()).toHaveLength(6);
   expect(g.v('thor').run()).toHaveLength(1);
   expect(g.v(['thor', 'hoder']).run()).toHaveLength(2);
   expect(g.v({ hair: 'magnificent' }).run()).toHaveLength(2);
@@ -85,24 +89,23 @@ test('take', () => {
   expect(query.run()).toHaveLength(1);
   expect(query.run()).toHaveLength(1);
   expect(query.run()).toHaveLength(1);
-  expect(query.run()).toHaveLength(0);
 });
 
 test('as/merge', () => {
   const g = odinGraph();
 
+  // Queries all pairs of [parent, child]
   const query = g.v().as('parent')
     .in('childOf').as('child')
     .merge('parent', 'child')
     .property('_id');
 
   expect(query.run()).toEqual([
-    'odin',
-    'hoder',
-    'odin',
-    'balder',
-    'odin',
-    'thor',
+    'thor', 'magni',
+    'thor', 'mothi',
+    'odin', 'hoder',
+    'odin', 'balder',
+    'odin', 'thor',
   ]);
 });
 
@@ -154,6 +157,41 @@ test('having does not return duplicates', () => {
   const query = g.v().having(c => c.in('childOf')).property('_id');
 
   expect(query.run()).toEqual([
+    'thor',
     'odin',
   ]);
+});
+
+test('inAny traverses multiple steps', () => {
+  const g = odinGraph();
+
+  const query = g.v('odin').inAny('childOf');
+
+  expect(query.property('_id').run().sort()).toEqual([
+    'thor',
+    'hoder',
+    'balder',
+    'magni',
+    'mothi',
+  ].sort());
+});
+
+test('inAny/outAny do not get stuck on graph with cycles', () => {
+  const g = new Graph<{}, {}>(
+    [
+      { _id: 'A' },
+      { _id: 'B' },
+    ],
+    [
+      { _out: 'A', _in: 'B' },
+      { _out: 'B', _in: 'A' },
+    ]
+  );
+
+  const query = g.v('A').outAny();
+
+  expect(query.property('_id').run().sort()).toEqual([
+    'A',
+    'B',
+  ].sort());
 });
