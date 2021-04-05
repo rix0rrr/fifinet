@@ -1,6 +1,6 @@
 {
   "name": "fifinet",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A tiny graph database and query engine",
   "main": "index.js",
   "types": "dist/index.d.ts",
@@ -8,7 +8,12 @@
     "build": "tsc",
     "test": "jest"
   },
-  "keywords": ["graph", "gremlin", "database", "query"],
+  "keywords": [
+    "graph",
+    "gremlin",
+    "database",
+    "query"
+  ],
   "author": "Rico Huijbers",
   "license": "MIT",
   "devDependencies": {
