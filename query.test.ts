@@ -1,10 +1,11 @@
 import { EdgeBase, Graph, VertexBase } from "./graph";
 
-interface MyVertex extends VertexBase {
+interface MyVertex {
+  _id: string;
   hair: string;
 }
 
-interface MyEdge extends EdgeBase {
+interface MyEdge {
   color: string;
 };
 

@@ -1,3 +1,4 @@
+import { VertexSource } from './pipes';
 import { Query } from './query';
 import { objectFilter } from './util';
 
@@ -11,33 +12,39 @@ export interface EdgeBase {
   readonly _out: string;
 }
 
-export type Vertex<V, E> = V & { _id: string, _in: Array<Edge<V, E>>, _out: Array<Edge<V, E>> };
-export type Edge<V, E> = E & { _in: Vertex<V, E>, _out: Vertex<V, E> };
+export type InVertex<V> = V & { _id?: string; }
+export type InEdge<E> = E & { _label?: string; _in: string; _out: string; }
 
-export class Graph<V extends VertexBase, E extends EdgeBase> {
+export type UserVertex<V> = V & { _id?: string; }
+export type UserEdge<E> = E & { _label?: string; }
+
+export type Vertex<V, E> = V & { _id: string, _in: Array<Edge<V, E>>, _out: Array<Edge<V, E>> };
+export type Edge<V, E> = E & { _label?: string; _in: Vertex<V, E>, _out: Vertex<V, E> };
+
+export class Graph<V, E> {
   private readonly vertices: Array<Vertex<V, E>> = [];
   private readonly edges: Array<Edge<V, E>> = [];
   private readonly vertexIndex: Record<string, Vertex<V, E>> = {};
   private autoId = 1;
 
-  constructor(vs?: V[], es?: E[]) {
+  constructor(vs?: InVertex<V>[], es?: InEdge<E>[]) {
     if (vs) { this.addVertices(vs); }
     if (es) { this.addEdges(es); }
   }
 
-  public addVertices(vs: V[]) {
+  public addVertices(vs: InVertex<V>[]) {
     for (const v of vs) {
       this.addVertex(v);
     }
   }
 
-  public addEdges(es: E[]) {
+  public addEdges(es: InEdge<E>[]) {
     for (const e of es) {
       this.addEdge(e);
     }
   }
 
-  public addVertex(v: V) {
+  public addVertex(v: InVertex<V>) {
     if (v._id && this.findVertexById(v._id)) {
       throw new Error(`A vertex with id '${v._id}' already exists`);
     }
@@ -54,7 +61,7 @@ export class Graph<V extends VertexBase, E extends EdgeBase> {
     return vertex;
   }
 
-  public addEdge(e: E) {
+  public addEdge(e: InEdge<E>) {
     const _in  = this.findVertexById(e._in);
     const _out = this.findVertexById(e._out);
 
@@ -81,7 +88,7 @@ export class Graph<V extends VertexBase, E extends EdgeBase> {
     return ids.map(this.findVertexById.bind(this));
   }
 
-  public findVertices(pattern?: Partial<V> | string | string[]): Array<Vertex<V, E> | undefined> {
+  public findVertices(pattern?: Partial<UserVertex<V>> | string | string[]): Array<Vertex<V, E> | undefined> {
     if (!pattern || (Array.isArray(pattern) && pattern.length === 0)) {
       // FIXME: Copying is expensive
       return this.vertices.slice();
@@ -102,15 +109,15 @@ export class Graph<V extends VertexBase, E extends EdgeBase> {
     throw new Error(`Did not understand argument: ${pattern}`);
   }
 
-  public searchVertices(pattern: Partial<V>): Array<Vertex<V, E> | undefined> {
+  public searchVertices(pattern: Partial<UserVertex<V>>): Array<Vertex<V, E> | undefined> {
     return this.vertices.filter((vertex) => {
       return objectFilter(vertex, pattern);
     })
   }
 
-  public v<A extends V>(arg?: string | string[] | A) {
+  public v(arg?: string | string[] | Partial<V>) {
     const query = new Query<V, E>(this);
-    query.add('vertex', arg ? [arg] : []);
+    query.add(new VertexSource(arg));
     return query;
   }
 
