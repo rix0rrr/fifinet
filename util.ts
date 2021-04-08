@@ -27,3 +27,7 @@ export function filterEdges<V, E>(filter?: string | string[] | Partial<EdgeProps
     return objectFilter(edge, filter)            // try the filter as an object
   }
 }
+
+export function isDefined<A>(x: A): x is NonNullable<A> {
+  return x !== undefined;
+}

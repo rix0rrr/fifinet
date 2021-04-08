@@ -1,6 +1,6 @@
 import { VertexSource } from './pipes';
 import { Query } from './query';
-import { filterEdges, objectFilter } from './util';
+import { filterEdges, isDefined, objectFilter } from './util';
 
 export type InVertex<V> = V & { _id?: string; }
 export type InEdge<E> = E & { _label?: string; _in: string; _out: string; }
@@ -11,13 +11,25 @@ export type EdgeProps<E> = E & { _label?: string; }
 export type Vertex<V, E> = V & { _id: string, _in: Array<Edge<V, E>>, _out: Array<Edge<V, E>> };
 export type Edge<V, E> = E & { _label?: string; _in: Vertex<V, E>, _out: Vertex<V, E> };
 
+export interface GraphOptions<V> {
+  /**
+   * Fields on vertices that should be indexed
+   *
+   * `_id` is always indexed.
+   */
+  readonly indexedFields?: Array<keyof V>;
+}
+
 export class Graph<V, E> {
   private readonly vertices: Array<Vertex<V, E>> = [];
   private readonly edges: Array<Edge<V, E>> = [];
-  private readonly vertexIndex: Record<string, Vertex<V, E>> = {};
+  private readonly vertexIndex = new Map<string, Vertex<V, E>>();
+  private readonly additionalIndices = new Map<keyof V, Map<any, Set<string>>>();
+  private readonly indexedFields: Array<keyof V>;
   private autoId = 1;
 
-  constructor(vs?: InVertex<V>[], es?: InEdge<E>[]) {
+  constructor(vs?: InVertex<V>[], es?: InEdge<E>[], options: GraphOptions<V> = {}) {
+    this.indexedFields = options.indexedFields ?? [];
     if (vs) { this.addVertices(vs); }
     if (es) { this.addEdges(es); }
   }
@@ -47,7 +59,15 @@ export class Graph<V, E> {
       _out: [],
     };
     this.vertices.push(vertex);
-    this.vertexIndex[vertex._id] = vertex;
+    this.vertexIndex.set(vertex._id, vertex);
+
+    for (const indexed of this.indexedFields) {
+      const value = vertex[indexed];
+      if (value !== undefined) {
+        this.indexField(indexed, value, id);
+      }
+    }
+
     return vertex;
   }
 
@@ -71,7 +91,7 @@ export class Graph<V, E> {
   }
 
   public findVertexById(id: string): Vertex<V, E> | undefined {
-    return this.vertexIndex[id];
+    return this.vertexIndex.get(id);
   }
 
   public findVerticesByIds(ids: string[]): Array<Vertex<V, E> | undefined> {
@@ -100,7 +120,22 @@ export class Graph<V, E> {
   }
 
   public searchVertices(pattern: Partial<VertexProps<V>>): Array<Vertex<V, E> | undefined> {
-    return this.vertices.filter((vertex) => {
+    if (pattern._id) {
+      return [this.findVertexById(pattern._id)];
+    }
+
+    // Search for indexed fields first
+    const indices = Object.keys(pattern)
+      .filter(key => key !== '_id')
+      .map(key => this.additionalIndices.get(key as any)?.get((pattern as any)[key]))
+      .filter(isDefined);
+
+
+    const initialVertexSet = indices.length > 0
+      ? this.findVerticesByIds(intersectSets(indices)).filter(isDefined)
+      : this.vertices;
+
+    return initialVertexSet.filter((vertex) => {
       return objectFilter(vertex, pattern);
     })
   }
@@ -120,4 +155,31 @@ export class Graph<V, E> {
     // FIXME: this copying ain't great either
     return vertex._out.filter(filterEdges(edgeFilter));
   }
+
+  private indexField(index: keyof V, value: any, id: string) {
+    let map = this.additionalIndices.get(index);
+    if (!map) {
+      map = new Map();
+      this.additionalIndices.set(index, map);
+    }
+
+    let set = map.get(value);
+    if (!set) {
+      set = new Set();
+      map.set(value, set);
+    }
+
+    set.add(id);
+  }
+}
+
+function intersectSets(indices: Set<string>[]): string[] {
+  const ret = new Array<string>();
+  const otherIndices = indices.slice(1);
+  for (const el of indices[0]) {
+    if (otherIndices.every(id => id.has(el))) {
+      ret.push(el);
+    }
+  }
+  return ret;
 }
