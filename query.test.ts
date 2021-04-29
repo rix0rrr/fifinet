@@ -36,6 +36,7 @@ test('vertex', () => {
   expect(g.v('thor').run()).toHaveLength(1);
   expect(g.v(['thor', 'hoder']).run()).toHaveLength(2);
   expect(g.v({ hair: 'magnificent' }).run()).toHaveLength(2);
+  expect(g.v({ _id: 'balder', hair: 'magnificent' }).run()).toHaveLength(0);
 });
 
 test('in', () => {
