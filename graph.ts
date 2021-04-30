@@ -121,7 +121,9 @@ export class Graph<V, E> {
 
   public searchVertices(pattern: Partial<VertexProps<V>>): Array<Vertex<V, E> | undefined> {
     if (pattern._id) {
-      return [this.findVertexById(pattern._id)];
+      return [this.findVertexById(pattern._id)]
+        .filter(isDefined)
+        .filter(vertex => objectFilter(vertex, pattern));
     }
 
     // Search for indexed fields first
