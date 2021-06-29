@@ -1,6 +1,6 @@
 {
   "name": "fifinet",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "A tiny graph database and query engine",
   "main": "index.js",
   "types": "dist/index.d.ts",
