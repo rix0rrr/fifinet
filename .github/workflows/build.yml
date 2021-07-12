@@ -1,0 +1,23 @@
+name: Build
+on: pull_request
+
+jobs:
+  run-build:
+    name: Test PR Build
+    runs-on: ubuntu-latest
+
+  steps:
+    - name: Checkout GitHub Repo
+      uses: actions/checkout@v2
+
+    - name: Cache node_modules
+      uses: actions/cache@v2
+      with:
+        path: '**/node_modules'
+        key: ${{ runner.os }}-modules-${{ hashFiles('**/package-lock.json') }}  
+
+    - name: Install Dependencies
+      run: npm install
+
+    - name: Run Build
+      run: npm run build
