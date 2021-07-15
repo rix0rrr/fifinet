@@ -2,7 +2,7 @@
   "name": "fifinet",
   "version": "0.1.6",
   "description": "A tiny graph database and query engine",
-  "main": "index.js",
+  "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
